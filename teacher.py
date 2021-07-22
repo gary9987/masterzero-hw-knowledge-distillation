@@ -27,9 +27,10 @@ if __name__ == '__main__':
 
     # The transform function for train data
     transform_train = transforms.Compose([
-        transforms.RandomRotation(45),
+        transforms.RandomRotation(90),
         transforms.RandomResizedCrop(224),
         transforms.RandomHorizontalFlip(),
+        ImageNetPolicy(),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406],
                              [0.229, 0.224, 0.225])
@@ -56,7 +57,7 @@ if __name__ == '__main__':
     # In this case, we define a DataLoader to random sample our dataset.
     # For single sampling, we take one batch of data. Each batch consists 4 images
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=40,
-                                              shuffle=True, num_workers=2)
+                                              shuffle=True, num_workers=0)
 
     validloader = torch.utils.data.DataLoader(validset, batch_size=40,
                                               shuffle=True, num_workers=2)
