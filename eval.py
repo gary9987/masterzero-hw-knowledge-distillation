@@ -44,7 +44,7 @@ if __name__ == '__main__':
     ])
 
     evalset = datasets.ImageFolder(root='food11re/evaluation/', transform=transform_train)
-    evalloader = DataLoader(dataset=evalset, batch_size=100)
+    evalloader = DataLoader(dataset=evalset, batch_size=100, num_workers=3)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     net = torchvision.models.resnet18(pretrained=False)
