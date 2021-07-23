@@ -6,6 +6,8 @@ import numpy as np
 import torch.nn as nn
 import torch.utils.data
 from autoaugment import ImageNetPolicy
+from torchsampler import ImbalancedDatasetSampler
+from imgAugTransform import ImgAugTransform
 import PIL
 
 if __name__ == '__main__':
@@ -30,7 +32,9 @@ if __name__ == '__main__':
         transforms.RandomRotation(90),
         transforms.RandomResizedCrop(224),
         transforms.RandomHorizontalFlip(),
-        ImageNetPolicy(),
+        #ImageNetPolicy(),
+        ImgAugTransform(),
+        lambda x: PIL.Image.fromarray(x),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406],
                              [0.229, 0.224, 0.225])
@@ -51,13 +55,14 @@ if __name__ == '__main__':
     # Use API to load valid dataset
     validset = torchvision.datasets.ImageFolder(root='food11re/validation', transform=transform_test)
 
-    randon_sampler = torch.utils.data.RandomSampler(trainset, replacement=True, num_samples=20000)
+    #randon_sampler = torch.utils.data.RandomSampler(trainset, replacement=True, num_samples=20000)
+    imblanceSampler = ImbalancedDatasetSampler(trainset, num_samples=18000)
 
     # Create DataLoader to draw samples from the dataset
     # In this case, we define a DataLoader to random sample our dataset.
     # For single sampling, we take one batch of data. Each batch consists 4 images
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=40,
-                                              shuffle=True, num_workers=0)
+                                              shuffle=False, num_workers=0, sampler=imblanceSampler)
 
     validloader = torch.utils.data.DataLoader(validset, batch_size=40,
                                               shuffle=True, num_workers=2)
@@ -166,9 +171,9 @@ if __name__ == '__main__':
         # calculate average losses
         # train_losses.append(train_loss/len(train_loader.dataset))
         # valid_losses.append(valid_loss.item()/len(valid_loader.dataset)
-        train_loss = train_loss / len(trainloader.dataset)
+        train_loss = train_loss / len(trainloader.sampler)
         valid_loss = valid_loss / len(validloader.dataset)
-        train_correct = 100. * train_correct / len(trainset)
+        train_correct = 100. * train_correct / len(trainloader.sampler)
         valid_correct = 100. * valid_correct / len(validset)
 
         # print training/validation statistics
