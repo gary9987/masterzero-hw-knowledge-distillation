@@ -4,6 +4,7 @@ import torchvision.transforms as transforms
 from tqdm import tqdm
 import numpy as np
 import torch.nn as nn
+import torch.nn.functional
 import torch.utils.data
 from autoaugment import ImageNetPolicy
 from torchsampler import ImbalancedDatasetSampler
@@ -11,7 +12,6 @@ from imgAugTransform import ImgAugTransform
 import PIL
 
 if __name__ == '__main__':
-
     print("==> Check devices..")
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print("Current device: ", device)
@@ -32,7 +32,7 @@ if __name__ == '__main__':
         transforms.RandomRotation(90),
         transforms.RandomResizedCrop(224),
         transforms.RandomHorizontalFlip(),
-        #ImageNetPolicy(),
+        # ImageNetPolicy(),
         ImgAugTransform(),
         lambda x: PIL.Image.fromarray(x),
         transforms.ToTensor(),
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     # Use API to load valid dataset
     validset = torchvision.datasets.ImageFolder(root='food11re/validation', transform=transform_test)
 
-    #randon_sampler = torch.utils.data.RandomSampler(trainset, replacement=True, num_samples=20000)
+    # randon_sampler = torch.utils.data.RandomSampler(trainset, replacement=True, num_samples=20000)
     imblanceSampler = ImbalancedDatasetSampler(trainset, num_samples=18000)
 
     # Create DataLoader to draw samples from the dataset
@@ -67,33 +67,53 @@ if __name__ == '__main__':
     validloader = torch.utils.data.DataLoader(validset, batch_size=40,
                                               shuffle=True, num_workers=2)
 
-
-
     print('==> Building model..')
 
     # declare a new model
-    net = torchvision.models.resnet18(pretrained=True)
-    num_features = net.fc.in_features
-    net.fc = nn.Linear(num_features, 11)
+    #net = torchvision.models.mobilenet_v3_small(pretrained=True)
+    net = torchvision.models.mobilenet_v3_small(pretrained=True)
 
-    #net.fc = nn.Sequential(
+    net.classifier = nn.Sequential(
+        nn.Linear(in_features=576, out_features=1024, bias=True),
+        nn.Hardswish(),
+        nn.Dropout(p=0.2, inplace=True),
+        nn.Linear(in_features=1024, out_features=11, bias=True)
+    )
+
+    # net.fc = nn.Sequential(
     #    nn.Dropout(0.5),
     #    nn.Linear(num_features, 11)
-    #)
+    # )
 
     # change all model tensor into cuda type
     # something like weight & bias are the tensor
     net = net.to(device)
     print(net)
-
+    '''
+    for k, v in net.named_parameters():
+        print(k)
+        if (k == 'conv1.weight' or k == 'bn1.weight' or k == 'bn1.bias'):
+            v.requires_grad = False
+        if (k[0:6] == 'layer1' or k[0:6] == 'layer2'):
+            v.requires_grad = False
+    '''
 
     print('==> Defining loss function and optimize..')
     import torch.optim as optim
 
     # loss function
     criterion = nn.CrossEntropyLoss()
+    criterion2 = nn.KLDivLoss()
+
     # optimization algorithm
     optimizer = optim.Adam(net.parameters())
+
+    # Load Teacher model
+    teacherNet = torchvision.models.resnet18(pretrained=False)
+    num_features = teacherNet.fc.in_features
+    teacherNet.fc = nn.Linear(num_features, 11)
+    teacherNet.load_state_dict(torch.load('teacher_model.pth'))
+    teacherNet = teacherNet.to(device)
 
     print('==> Training model..')
     # Set the model in training mode
@@ -105,6 +125,8 @@ if __name__ == '__main__':
     n_epochs = 40
 
     valid_loss_min = np.Inf  # track change in validation loss
+
+    alpha = 0.8
 
     for epoch in range(1, n_epochs + 1):
 
@@ -118,14 +140,19 @@ if __name__ == '__main__':
         # train the model #
         ###################
         net.train()
+        teacherNet.eval()
         for data, target in tqdm(trainloader):
             # move tensors to GPU if CUDA is available
 
             data, target = data.cuda(), target.cuda()
+
+            soft_target = teacherNet(data)
+
             # clear the gradients of all optimized variables
             optimizer.zero_grad()
             # forward pass: compute predicted outputs by passing inputs to the model
             output = net(data)
+
 
             # select the class with highest probability
             _, pred = output.max(1)
@@ -135,7 +162,13 @@ if __name__ == '__main__':
             train_correct += pred.eq(target).sum().item()
 
             # calculate the batch loss
-            loss = criterion(output, target)
+            loss1 = criterion(output, target)
+
+            T = 2
+            outputs_S = nn.functional.log_softmax(output / T, dim=1)
+            outputs_T = nn.functional.softmax(soft_target / T, dim=1)
+            loss2 = criterion2(outputs_S, outputs_T) * T * T
+            loss = loss1 * (1 - alpha) + loss2 * alpha
 
             # backward pass: compute gradient of the loss with respect to model parameters
             loss.backward()
@@ -177,16 +210,17 @@ if __name__ == '__main__':
         valid_correct = 100. * valid_correct / len(validset)
 
         # print training/validation statistics
-        print('\tTraining Acc: {:.6f} \tTraining Loss: {:.6f} \tValidation Acc: {:.6f} \tValidation Loss: {:.6f}'.format(train_correct,
-                                                                                              train_loss, valid_correct, valid_loss))
+        print(
+            '\tTraining Acc: {:.6f} \tTraining Loss: {:.6f} \tValidation Acc: {:.6f} \tValidation Loss: {:.6f}'.format(
+                train_correct,
+                train_loss, valid_correct, valid_loss))
 
         # save model if validation loss has decreased
         if valid_loss <= valid_loss_min:
             print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
                 valid_loss_min,
                 valid_loss))
-            torch.save(net.state_dict(), 'teacher_model.pth')
+            torch.save(net, 'student.pth')
             valid_loss_min = valid_loss
 
     print('Finished Training')
-
