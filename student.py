@@ -220,7 +220,7 @@ if __name__ == '__main__':
             print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
                 valid_loss_min,
                 valid_loss))
-            torch.save(net, 'student.pth')
+            torch.save(net, 'student_model.pth')
             valid_loss_min = valid_loss
 
     print('Finished Training')
