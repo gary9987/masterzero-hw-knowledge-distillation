@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    choice = input('Evaluation: 1.teacher 2.student ===> ')
+    choice = input('Evaluation: 1.teacher 2.student 3.mobilenet_v3 ===> ')
 
     if choice == '1':
         net = torchvision.models.resnet18(pretrained=False)
@@ -57,6 +57,8 @@ if __name__ == '__main__':
         net.load_state_dict(torch.load('teacher_model.pth'))
     elif choice == '2':
         net = torch.load('student_model.pth', map_location='cuda:0')
+    elif choice == '3':
+        net = torch.load('mobilenet_v3.pth', map_location='cuda:0')
     else:
         print('Choice error.')
         exit()
