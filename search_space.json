@@ -1,0 +1,6 @@
+{
+    "batch_size": {"_type":"choice", "_value": [20, 40, 80]},
+    "criterion": {"_type":"choice", "_value":["CrossEntropyLoss", "KLDivLoss"]},
+    "criterion2": {"_type":"choice", "_value":["CrossEntropyLoss", "KLDivLoss"]},
+    "alpha": {"_type": "uniform", "_value": [1.0, 0]}
+}

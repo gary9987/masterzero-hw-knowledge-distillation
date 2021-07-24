@@ -10,8 +10,14 @@ from autoaugment import ImageNetPolicy
 from torchsampler import ImbalancedDatasetSampler
 from imgAugTransform import ImgAugTransform
 import PIL
+import logging
+import nni
+from nni.utils import merge_parameter
 
-if __name__ == '__main__':
+logger = logging.getLogger('student_nni_AutoML')
+
+def main(args):
+
     print("==> Check devices..")
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print("Current device: ", device)
@@ -60,10 +66,10 @@ if __name__ == '__main__':
     # Create DataLoader to draw samples from the dataset
     # In this case, we define a DataLoader to random sample our dataset.
     # For single sampling, we take one batch of data. Each batch consists 4 images
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=20,
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=args['batch_size'],
                                               shuffle=False, num_workers=0, sampler=imblanceSampler)
 
-    validloader = torch.utils.data.DataLoader(validset, batch_size=20,
+    validloader = torch.utils.data.DataLoader(validset, batch_size=args['batch_size'],
                                               shuffle=True, num_workers=2)
 
     print('==> Building model..')
@@ -101,8 +107,15 @@ if __name__ == '__main__':
     import torch.optim as optim
 
     # loss function
-    criterion = nn.CrossEntropyLoss()
-    criterion2 = nn.KLDivLoss()
+    if(args['criterion'] == 'CrossEntropyLoss'):
+        criterion = nn.CrossEntropyLoss()
+    else:
+        criterion = nn.KLDivLoss()
+
+    if (args['criterion2'] == 'CrossEntropyLoss'):
+        criterion2 = nn.CrossEntropyLoss()
+    else:
+        criterion2 = nn.KLDivLoss()
 
     # optimization algorithm
     optimizer = optim.Adam(net.parameters())
@@ -121,7 +134,7 @@ if __name__ == '__main__':
 
     valid_loss_min = np.Inf  # track change in validation loss
 
-    alpha = 0.8
+    alpha = args['alpha']
 
     for epoch in range(1, n_epochs + 1):
 
@@ -203,7 +216,7 @@ if __name__ == '__main__':
         valid_loss = valid_loss / len(validloader.dataset)
         train_correct = 100. * train_correct / len(trainloader.sampler)
         valid_correct = 100. * valid_correct / len(validset)
-
+        nni.report_intermediate_result(valid_correct)
         # print training/validation statistics
         print(
             '\tTraining Acc: {:.6f} \tTraining Loss: {:.6f} \tValidation Acc: {:.6f} \tValidation Loss: {:.6f}'.format(
@@ -215,7 +228,25 @@ if __name__ == '__main__':
             print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
                 valid_loss_min,
                 valid_loss))
-            torch.save(net, 'student_model.pth')
+            torch.save(net, 'student_nni_model.pth')
             valid_loss_min = valid_loss
 
+    nni.report_final_result(valid_correct)
     print('Finished Training')
+
+if __name__ == '__main__':
+    try:
+        # get parameters form tuner
+        tuner_params = nni.get_next_parameter()
+        '''
+        tuner_params = {
+    "batch_size": 20,
+    "criterion": "CrossEntropyLoss",
+    "criterion2": "KLDivLoss",
+    "alpha": 0.5
+}
+        '''
+        logging.debug(tuner_params)
+        main(tuner_params)
+    except Exception as exception:
+        raise
