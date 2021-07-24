@@ -32,7 +32,6 @@ if __name__ == '__main__':
         transforms.RandomRotation(90),
         transforms.RandomResizedCrop(224),
         transforms.RandomHorizontalFlip(),
-        #ImageNetPolicy(),
         ImgAugTransform(),
         lambda x: PIL.Image.fromarray(x),
         transforms.ToTensor(),
@@ -61,10 +60,10 @@ if __name__ == '__main__':
     # Create DataLoader to draw samples from the dataset
     # In this case, we define a DataLoader to random sample our dataset.
     # For single sampling, we take one batch of data. Each batch consists 4 images
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=40,
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=80,
                                               shuffle=False, num_workers=0, sampler=imblanceSampler)
 
-    validloader = torch.utils.data.DataLoader(validset, batch_size=40,
+    validloader = torch.utils.data.DataLoader(validset, batch_size=80,
                                               shuffle=True, num_workers=2)
 
 
