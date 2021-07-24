@@ -107,15 +107,8 @@ def main(args):
     import torch.optim as optim
 
     # loss function
-    if(args['criterion'] == 'CrossEntropyLoss'):
-        criterion = nn.CrossEntropyLoss()
-    else:
-        criterion = nn.KLDivLoss()
-
-    if (args['criterion2'] == 'CrossEntropyLoss'):
-        criterion2 = nn.CrossEntropyLoss()
-    else:
-        criterion2 = nn.KLDivLoss()
+    criterion = nn.CrossEntropyLoss()
+    criterion2 = nn.KLDivLoss()
 
     # optimization algorithm
     optimizer = optim.Adam(net.parameters())
@@ -130,7 +123,7 @@ def main(args):
     print('==> Training model..')
 
     # number of epochs to train the model
-    n_epochs = 40
+    n_epochs = 30
 
     valid_loss_min = np.Inf  # track change in validation loss
 
@@ -172,7 +165,7 @@ def main(args):
             # calculate the batch loss
             loss1 = criterion(output, target)
 
-            T = 2
+            T = args["T"]
             outputs_S = nn.functional.log_softmax(output / T, dim=1)
             outputs_T = nn.functional.softmax(soft_target / T, dim=1)
             loss2 = criterion2(outputs_S, outputs_T) * T * T
@@ -240,11 +233,10 @@ if __name__ == '__main__':
         tuner_params = nni.get_next_parameter()
         '''
         tuner_params = {
-    "batch_size": 20,
-    "criterion": "CrossEntropyLoss",
-    "criterion2": "KLDivLoss",
-    "alpha": 0.5
-}
+            "batch_size": 20,
+            "T": 2,
+            "alpha": 0.5
+        }
         '''
         logging.debug(tuner_params)
         main(tuner_params)
