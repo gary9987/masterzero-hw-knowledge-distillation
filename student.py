@@ -10,6 +10,19 @@ from torchsampler import ImbalancedDatasetSampler
 from imgAugTransform import ImgAugTransform
 import PIL
 
+def KdLoss(output, target, soft_targer, alpha, T):
+    """
+    Compute the knowledge-distillation (KD) loss given outputs, labels.
+    "Hyperparameters": temperature and alpha
+    NOTE: the KL Divergence for PyTorch comparing the softmaxs of teacher
+    and student expects the input tensor to be log probabilities! See Issue #2
+    """
+    KD_loss = nn.KLDivLoss()(nn.functional.log_softmax(output / T, dim=1),
+                             nn.functional.softmax(soft_targer / T, dim=1)) * (alpha * T * T) + \
+              nn.functional.cross_entropy(output, target) * (1. - alpha)
+
+    return KD_loss
+
 if __name__ == '__main__':
     print("==> Check devices..")
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -122,6 +135,7 @@ if __name__ == '__main__':
     valid_loss_min = np.Inf if checkpoint == 0 else checkpoint['valid_loss']  # track change in validation loss
 
     alpha = 0.8
+    T = 4
 
     for epoch in range(1 if checkpoint == 0 else checkpoint['epoch'], n_epochs + 1):
 
@@ -156,13 +170,15 @@ if __name__ == '__main__':
             train_correct += pred.eq(target).sum().item()
 
             # calculate the batch loss
+            '''
             loss1 = criterion(output, target)
-
             T = 2
             outputs_S = nn.functional.log_softmax(output / T, dim=1)
             outputs_T = nn.functional.softmax(soft_target / T, dim=1)
             loss2 = criterion2(outputs_S, outputs_T) * T * T
             loss = loss1 * (1 - alpha) + loss2 * alpha
+            '''
+            loss = KdLoss(output, target, soft_target, alpha, T)
 
             # backward pass: compute gradient of the loss with respect to model parameters
             loss.backward()
