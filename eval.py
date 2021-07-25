@@ -51,6 +51,7 @@ if __name__ == '__main__':
     choice = input('Evaluation: 1.teacher 2.student 3.mobilenet_v3 ===> ')
 
     if choice == '1':
+
         net = torchvision.models.resnet18(pretrained=False)
         num_features = net.fc.in_features
         net.fc = nn.Linear(num_features, 11)

@@ -55,7 +55,7 @@ if __name__ == '__main__':
     validset = torchvision.datasets.ImageFolder(root='food11re/validation', transform=transform_test)
 
     #randon_sampler = torch.utils.data.RandomSampler(trainset, replacement=True, num_samples=20000)
-    imblanceSampler = ImbalancedDatasetSampler(trainset, num_samples=18000)
+    imblanceSampler = ImbalancedDatasetSampler(trainset, num_samples=25000)
 
     # Create DataLoader to draw samples from the dataset
     # In this case, we define a DataLoader to random sample our dataset.
@@ -75,13 +75,13 @@ if __name__ == '__main__':
     num_features = net.fc.in_features
     net.fc = nn.Linear(num_features, 11)
 
-    #net.fc = nn.Sequential(
-    #    nn.Dropout(0.5),
-    #    nn.Linear(num_features, 11)
-    #)
+    for k, v in net.named_parameters():
+        print(k)
+        if (k == 'conv1.weight' or k == 'bn1.weight' or k == 'bn1.bias'):
+            v.requires_grad = False
+        if (k[0:6] == 'layer1' or k[0:6] == 'layer2'):
+            v.requires_grad = False
 
-    # change all model tensor into cuda type
-    # something like weight & bias are the tensor
     net = net.to(device)
     print(net)
 
