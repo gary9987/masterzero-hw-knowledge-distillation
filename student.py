@@ -67,10 +67,17 @@ if __name__ == '__main__':
     validloader = torch.utils.data.DataLoader(validset, batch_size=20,
                                               shuffle=True, num_workers=2)
 
+    checkpoint = 0
+    print('Trying to load checkpoint ...')
+    try:
+        checkpoint = torch.load('student_checkpoint.tar')
+    except:
+        print('Checkpoint not found.')
+
     print('==> Building model..')
 
     # declare a new model
-    #net = torchvision.models.mobilenet_v3_small(pretrained=True)
+    # net = torchvision.models.mobilenet_v3_small(pretrained=True)
     net = torchvision.models.mobilenet_v3_small(pretrained=True)
 
     net.classifier = nn.Sequential(
@@ -80,23 +87,11 @@ if __name__ == '__main__':
         nn.Linear(in_features=1024, out_features=11, bias=True)
     )
 
-    # net.fc = nn.Sequential(
-    #    nn.Dropout(0.5),
-    #    nn.Linear(num_features, 11)
-    # )
+    if checkpoint != 0:
+        net.load_state_dict(checkpoint['net_state_dict'])
 
-    # change all model tensor into cuda type
-    # something like weight & bias are the tensor
     net = net.to(device)
     print(net)
-    '''
-    for k, v in net.named_parameters():
-        print(k)
-        if (k == 'conv1.weight' or k == 'bn1.weight' or k == 'bn1.bias'):
-            v.requires_grad = False
-        if (k[0:6] == 'layer1' or k[0:6] == 'layer2'):
-            v.requires_grad = False
-    '''
 
     print('==> Defining loss function and optimize..')
     import torch.optim as optim
@@ -107,6 +102,8 @@ if __name__ == '__main__':
 
     # optimization algorithm
     optimizer = optim.Adam(net.parameters())
+    if checkpoint != 0:
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     # Load Teacher model
     teacherNet = torchvision.models.resnet18(pretrained=False)
@@ -124,11 +121,11 @@ if __name__ == '__main__':
     # number of epochs to train the model
     n_epochs = 40
 
-    valid_loss_min = np.Inf  # track change in validation loss
+    valid_loss_min = np.Inf if checkpoint == 0 else checkpoint['valid_loss']  # track change in validation loss
 
     alpha = 0.8
 
-    for epoch in range(1, n_epochs + 1):
+    for epoch in range(1 if checkpoint == 0 else checkpoint['epoch'], n_epochs + 1):
 
         # keep track of training and validation loss
         train_correct = 0
@@ -152,7 +149,6 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             # forward pass: compute predicted outputs by passing inputs to the model
             output = net(data)
-
 
             # select the class with highest probability
             _, pred = output.max(1)
@@ -217,10 +213,21 @@ if __name__ == '__main__':
 
         # save model if validation loss has decreased
         if valid_loss <= valid_loss_min:
-            print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
+            print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving checkpoint ...'.format(
                 valid_loss_min,
                 valid_loss))
-            torch.save(net, 'student_model.pth')
+
+            torch.save({
+                'epoch': epoch + 1,
+                'optimizer_state_dict': optimizer.state_dict(),
+                'valid_loss': valid_loss,
+                'net_state_dict': net.state_dict()
+            }, 'student_checkpoint.tar')
+
             valid_loss_min = valid_loss
 
+    print('Saving model ...')
+    net.load_state_dict(checkpoint['net_state_dict'])
+    torch.save(net, 'student.pth')
     print('Finished Training')
+
