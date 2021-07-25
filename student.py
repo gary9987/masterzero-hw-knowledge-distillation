@@ -227,6 +227,6 @@ if __name__ == '__main__':
     print('Saving model ...')
     checkpoint = torch.load('student_checkpoint.tar')
     net.load_state_dict(checkpoint['net_state_dict'])
-    torch.save(net, 'student.pth')
+    torch.save(net, 'student_model.pth')
     print('Finished Training')
 
