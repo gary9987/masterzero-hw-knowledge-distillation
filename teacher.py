@@ -5,7 +5,6 @@ from tqdm import tqdm
 import numpy as np
 import torch.nn as nn
 import torch.utils.data
-from autoaugment import ImageNetPolicy
 from torchsampler import ImbalancedDatasetSampler
 from imgAugTransform import ImgAugTransform
 import PIL

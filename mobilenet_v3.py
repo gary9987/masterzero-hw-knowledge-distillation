@@ -6,7 +6,6 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional
 import torch.utils.data
-from autoaugment import ImageNetPolicy
 from torchsampler import ImbalancedDatasetSampler
 from imgAugTransform import ImgAugTransform
 import PIL
@@ -34,7 +33,6 @@ if __name__ == '__main__':
         transforms.RandomRotation(90),
         transforms.RandomResizedCrop(224),
         transforms.RandomHorizontalFlip(),
-        # ImageNetPolicy(),
         ImgAugTransform(),
         lambda x: PIL.Image.fromarray(x),
         transforms.ToTensor(),

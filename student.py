@@ -6,7 +6,6 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional
 import torch.utils.data
-from autoaugment import ImageNetPolicy
 from torchsampler import ImbalancedDatasetSampler
 from imgAugTransform import ImgAugTransform
 import PIL
@@ -32,7 +31,6 @@ if __name__ == '__main__':
         transforms.RandomRotation(90),
         transforms.RandomResizedCrop(224),
         transforms.RandomHorizontalFlip(),
-        # ImageNetPolicy(),
         ImgAugTransform(),
         lambda x: PIL.Image.fromarray(x),
         transforms.ToTensor(),
@@ -227,6 +225,7 @@ if __name__ == '__main__':
             valid_loss_min = valid_loss
 
     print('Saving model ...')
+    checkpoint = torch.load('student_checkpoint.tar')
     net.load_state_dict(checkpoint['net_state_dict'])
     torch.save(net, 'student.pth')
     print('Finished Training')
