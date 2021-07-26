@@ -61,17 +61,17 @@ if __name__ == '__main__':
     # Create DataLoader to draw samples from the dataset
     # In this case, we define a DataLoader to random sample our dataset.
     # For single sampling, we take one batch of data. Each batch consists 4 images
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=20,
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=80,
                                               shuffle=False, num_workers=0, sampler=imblanceSampler)
 
-    validloader = torch.utils.data.DataLoader(validset, batch_size=40,
+    validloader = torch.utils.data.DataLoader(validset, batch_size=80,
                                               shuffle=True, num_workers=2)
 
     print('==> Building model..')
 
     # declare a new model
     # net = torchvision.models.mobilenet_v3_small(pretrained=True)
-    net = torchvision.models.mobilenet_v3_small(pretrained=True)
+    net = torchvision.models.mobilenet_v3_small(pretrained=False)
 
     net.classifier = nn.Sequential(
         nn.Linear(in_features=576, out_features=1024, bias=True),
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     # [document]: https://pytorch.org/docs/stable/nn.html#torch.nn.Module.train
 
     # number of epochs to train the model
-    n_epochs = 40
+    n_epochs = 30
 
     valid_loss_min = np.Inf  # track change in validation loss
 
