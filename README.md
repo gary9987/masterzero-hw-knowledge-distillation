@@ -43,7 +43,41 @@ Top 3 Accuracy of class 10 is 498/500  99.60%
 Top 3 accuracy of the network on the 3347 test images: 3291/3347  98.33 %
 98.3268598745145
 ```
+## Student Model
+- Training with teacher
+- torchvision.models.mobilenet_v3_small(pretrained=False)
+- batch_size = 80
+- epochs = 30
+### Evaluation
+```bash
+Top 1 Accuracy of class  0 is 213/368  57.88%
+Top 1 Accuracy of class  1 is 103/148  69.59%
+Top 1 Accuracy of class  2 is 209/231  90.48%
+Top 1 Accuracy of class  3 is 322/500  64.40%
+Top 1 Accuracy of class  4 is 268/335  80.00%
+Top 1 Accuracy of class  5 is 234/287  81.53%
+Top 1 Accuracy of class  6 is 316/432  73.15%
+Top 1 Accuracy of class  7 is 123/147  83.67%
+Top 1 Accuracy of class  8 is  85/ 96  88.54%
+Top 1 Accuracy of class  9 is 254/303  83.83%
+Top 1 Accuracy of class 10 is 460/500  92.00%
+Top 1 accuracy of the network on the 3347 test images: 2587/3347  77.29 %
+77.29309829698238
 
+Top 3 Accuracy of class  0 is 322/368  87.50%
+Top 3 Accuracy of class  1 is 130/148  87.84%
+Top 3 Accuracy of class  2 is 225/231  97.40%
+Top 3 Accuracy of class  3 is 469/500  93.80%
+Top 3 Accuracy of class  4 is 309/335  92.24%
+Top 3 Accuracy of class  5 is 278/287  96.86%
+Top 3 Accuracy of class  6 is 415/432  96.06%
+Top 3 Accuracy of class  7 is 141/147  95.92%
+Top 3 Accuracy of class  8 is  92/ 96  95.83%
+Top 3 Accuracy of class  9 is 295/303  97.36%
+Top 3 Accuracy of class 10 is 486/500  97.20%
+Top 3 accuracy of the network on the 3347 test images: 3162/3347  94.47 %
+94.47266208544966
+```
 ## MobileNet_V3
 - Training without teacher
 - torchvision.models.mobilenet_v3_small(pretrained=False)
