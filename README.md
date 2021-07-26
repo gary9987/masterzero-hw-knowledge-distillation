@@ -45,8 +45,8 @@ Top 3 accuracy of the network on the 3347 test images: 3291/3347  98.33 %
 ```
 
 ## MobileNet_V3
-- Training without teacher.
-- pretrained = False
+- Training without teacher
+- torchvision.models.mobilenet_v3_small(pretrained=False)
 - batch_size = 80
 - epochs = 30
 ### Evaluation
