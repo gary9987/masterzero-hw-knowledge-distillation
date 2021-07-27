@@ -139,3 +139,8 @@ Top 3 Accuracy of class 10 is 465/500  93.00%
 Top 3 accuracy of the network on the 3347 test images: 3143/3347  93.90 %
 93.90498954287422
 ```
+
+## Reference
+- [知识蒸馏（Knowledge Distillation）的Pytorch实现以及分析](https://blog.csdn.net/shi2xian2wei2/article/details/84570620)
+- [peterliht/knowledge-distillation-pytorch](https://github.com/peterliht/knowledge-distillation-pytorch/blob/ef06124d67a98abcb3a5bc9c81f7d0f1f016a7ef/model/net.py#L100)
+- [Pytorch：模型的保存与加载 torch.save()、torch.load()、torch.nn.Module.load_state_dict()](https://blog.csdn.net/weixin_40522801/article/details/106563354)
