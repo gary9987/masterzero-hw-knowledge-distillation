@@ -1,8 +1,10 @@
 # masterzero-hw-knowledge-distillation
 
 ## Teacher Model
+- `teacher.py`
 - torchvision.models.resnet18(pretrained=True)
 - 40 epochs, no more updates after reaching the 28th epoch.
+- batch_size = 80
 
 ### Fix some layers
 ```python
@@ -13,6 +15,8 @@ for k, v in net.named_parameters():
     if (k[0:6] == 'layer1' or k[0:6] == 'layer2'):
         v.requires_grad = False
 ```
+### Sampoler
+- ImbalancedDatasetSampler(trainset, num_samples=25000)
 ### Evaluation
 ```bash
 Top 1 Accuracy of class  0 is 312/368  84.78%
@@ -44,10 +48,29 @@ Top 3 accuracy of the network on the 3347 test images: 3291/3347  98.33 %
 98.3268598745145
 ```
 ## Student Model
+- `student.py`
 - Training with teacher
 - torchvision.models.mobilenet_v3_small(pretrained=False)
 - batch_size = 80
 - epochs = 30
+
+### Sampler
+- ImbalancedDatasetSampler(trainset, num_samples=18000)
+### KD Loss
+```python
+def KdLoss(output, target, soft_targer, alpha, T):
+    """
+    Compute the knowledge-distillation (KD) loss given outputs, labels.
+    "Hyperparameters": temperature and alpha
+    NOTE: the KL Divergence for PyTorch comparing the softmaxs of teacher
+    and student expects the input tensor to be log probabilities! See Issue #2
+    """
+    KD_loss = nn.KLDivLoss()(nn.functional.log_softmax(output / T, dim=1),
+                             nn.functional.softmax(soft_targer / T, dim=1)) * (alpha * T * T) + \
+              nn.functional.cross_entropy(output, target) * (1. - alpha)
+
+    return KD_loss
+```
 ### Evaluation
 ```bash
 Top 1 Accuracy of class  0 is 213/368  57.88%
@@ -79,10 +102,13 @@ Top 3 accuracy of the network on the 3347 test images: 3162/3347  94.47 %
 94.47266208544966
 ```
 ## MobileNet_V3
+- `mobilenet_v3.py`
 - Training without teacher
 - torchvision.models.mobilenet_v3_small(pretrained=False)
 - batch_size = 80
 - epochs = 30
+### Sampler
+- ImbalancedDatasetSampler(trainset, num_samples=18000)
 ### Evaluation
 ```bash
 Top 1 Accuracy of class  0 is 250/368  67.93%
